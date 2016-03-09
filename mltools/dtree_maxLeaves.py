@@ -85,16 +85,41 @@ class treeRegress(regressor):
         """
         n,d = mat(X).shape
         nFeatures = min(nFeatures if nFeatures else d, d)
+        leaves = 0
 
         sz = min(2 * n, 2**(maxDepth + 1))   # pre-allocate storage for tree:
         L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
 
-        L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures, 0, maxLeaves)
+        self.information_gain = dict()
+        '''
+        using this numbering system for identifying nodes for now:
+                             1
+                    /                   \
+                   2                      3
+                      \                 /    \
+               (4)     5               6      7
+              /   \   /  \           /       /  \
+            (8)   (9) 10  11        12  (13) 14  15
 
-        self.L = L[0:last]                              # store returned data into object
-        self.R = R[0:last]                              
-        self.F = F[0:last]
-        self.T = T[0:last]
+            4 and its children do not exist and 13 and its children do not exist. 
+            The numbering system skips right over them, but also skips their numbers
+            so that it can trace its ancestral path if needed. 
+
+            Right child is n * 2, and left child is (n * 2) + 1
+
+            we can discuss if this isn't the best option for numbering
+
+            -Zach
+        '''
+
+        while leaves <= maxLeaves:
+            L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, \
+                minParent, minScore, nFeatures, 0, maxLeaves)
+
+        self.L = L #[0:last]                              # store returned data into object
+        self.R = R #[0:last]                              
+        self.F = F #[0:last]
+        self.T = T #[0:last]
 
 
 
@@ -113,7 +138,7 @@ class treeRegress(regressor):
 ## HELPERS #####################################################################
     def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures, leaves, maxLeaves):
         """
-        Zach, Sharon, and Janice's decision tree training funciton: based on handling complexity through
+        Zach, Sharon, and Janice's decision tree training function: based on handling complexity through
         the maximum number of leaves.
 
         TODO:
@@ -129,9 +154,54 @@ class treeRegress(regressor):
                     pairs that become available
                 b. construct tree
         """
+        n, d = mat(X).shape
+        if n < minParent or leaves >= maxLeaves or np.var(Y) < minScore:
+            assert n != 0, ('TreeRegress.__dectree_train: tried to create size zero node')
+            # TODO: return something. maybe get rid of this whole conditional since it seems to be only used
+            #           for recursion halting.
 
-        return 0
+        best_val = np.inf
+        best_feat = -1
+        try_feat = np.random.permutation(d)
 
+        # ...otherwise, search over (allowed) features
+        for i_feat in try_feat[0:nFeatures]:
+            dsorted = arr(np.sort(X[:,i_feat].T)).ravel()                       # sort data...
+            pi = np.argsort(X[:,i_feat].T)                                      # ...get sorted indices...
+            tsorted = Y[pi].ravel()                                             # ...and sort targets by feature ID
+            can_split = np.append(arr(dsorted[:-1] != dsorted[1:]), 0)          # which indices are valid split points?
+
+            if not np.any(can_split):          # no way to split on this feature?
+                continue
+
+            # find min weighted variance among split points
+            val,idx = self.__min_weighted_var(tsorted, can_split, n)
+
+            # save best feature and split point found so far
+            if val < best_val:
+                best_val = val
+                best_feat = i_feat
+                best_thresh = (dsorted[idx] + dsorted[idx + 1]) / 2
+
+        # if no split possible, output leaf (prediction) node
+        if best_feat == -1:         
+            return self.__output_leaf(Y, n, L, R, F, T, next)
+
+        # split data on feature i_feat, value (tsorted[idx] + tsorted[idx + 1]) / 2
+        F[next] = best_feat
+        T[next] = best_thresh
+        go_left = X[:,F[next]] < T[next]
+        my_idx = next
+        L[my_idx] = next * 2
+        R[my_idx] = (next * 2) + 1
+        next += 1
+
+
+
+
+        return (L, R, F, T, next)
+
+'''
 
     def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures, leaves, maxLeaves):
         """
@@ -202,6 +272,7 @@ class treeRegress(regressor):
 
         return (L,R,F,T,next)
 
+'''
 
     def __dectree_test(self, X, L, R, F, T, pos):
         """
