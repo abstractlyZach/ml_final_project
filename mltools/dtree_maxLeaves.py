@@ -111,6 +111,26 @@ class treeRegress(regressor):
 
     
 ## HELPERS #####################################################################
+    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures, leaves, maxLeaves):
+        """
+        Zach, Sharon, and Janice's decision tree training funciton: based on handling complexity through
+        the maximum number of leaves.
+
+        TODO:
+            1) Create a structure that holds the [decision and information gain (from that decision)]
+                for each possible node
+            2) Iterate through and create tree: 
+                // within a while loop (while leaves != maxLeaves)
+
+                ROOT: (when leaves == 0). choose the one with most(???) entropy from all possible
+                    take ROOT out of 
+
+                a. At the creation of each new tree node (or leaf), calculate the new [decision and info gain]
+                    pairs that become available
+                b. construct tree
+        """
+
+        return 0
 
 
     def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures, leaves, maxLeaves):
@@ -171,14 +191,14 @@ class treeRegress(regressor):
 
 
         # recur left
-        L[my_idx] = next    
-        L,R,F,T,next = self.__dectree_train(X[go_left,:], Y[go_left], L, R, F, T, 
-            next, depth + 1, minParent, maxDepth, minScore, nFeatures)
+        # L[my_idx] = next    
+        # L,R,F,T,next = self.__dectree_train(X[go_left,:], Y[go_left], L, R, F, T, 
+        #     next, depth + 1, minParent, maxDepth, minScore, nFeatures)
 
-        # recur right
-        R[my_idx] = next    
-        L,R,F,T,next = self.__dectree_train(X[np.logical_not(go_left),:], Y[np.logical_not(go_left)], L, R, F, T, 
-            next, depth + 1, minParent, maxDepth, minScore, nFeatures)
+        # # recur right
+        # R[my_idx] = next    
+        # L,R,F,T,next = self.__dectree_train(X[np.logical_not(go_left),:], Y[np.logical_not(go_left)], L, R, F, T, 
+        #     next, depth + 1, minParent, maxDepth, minScore, nFeatures)
 
         return (L,R,F,T,next)
 
@@ -256,222 +276,3 @@ class treeRegress(regressor):
 ################################################################################
 ################################################################################
 ################################################################################
-
-
-################################################################################
-## TREECLASSIFY ################################################################
-################################################################################
-
-
-class treeClassify(classifier):
-
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor for TreeClassifier (decision tree classifier).
-
-        Parameters: see the "train" function; calls "train" if arguments passed
-
-        Properties:
-          classes : list of identifiers for each class
-          TODO
-        """
-        self.classes = []
-        self.L = np.asarray([0])         # index of left child
-        self.R = np.asarray([0])         # index of right child
-        self.F = np.asarray([0])         # feature to split on
-        self.T = np.asarray([0])         # threshold value for feature
-
-        if len(args) or len(kwargs):     # if we were given optional arguments,
-            self.train(*args, **kwargs)    #  just pass them through to "train"
-
-    
-#    def X__repr__(self):
-#        to_return = 'Decision Tree Classifier; {} features\nThresholds: {}'.format(
-#            len(self.classes), str(self.T) if len(self.T) < 4 else 
-#            '[{0:.2f}, {1:.2f} ... {2:.2f}, {3:.2f}]'
-#             .format(self.T[0], self.T[1], self.T[-1], self.T[-2]))
-#        return to_return
-
-    def __repr__(self):
-        to_return = 'Decision Tree Classifier\n'
-        if len(self.T) > 8:
-            to_return += 'Thresholds: {}'.format(
-                '[{0:.2f}, {1:.2f} ... {2:.2f}, {3:.2f}]'
-                .format(self.T[0], self.T[1], self.T[-1], self.T[-2]))
-        else:
-            to_return = self.__printTree(0,'  ')
-        return to_return
-
-    def __printTree(self,node,indent):
-        to_return = ''
-        if (self.F[node] == -1):
-            to_return += indent+'Predict {}\n'.format(self.T[node])
-        else:
-            to_return += indent+'if x[{:d}] < {:f}:\n'.format(int(self.F[node]),self.T[node])
-            to_return += self.__printTree(self.L[node],indent+'  ')
-            to_return += indent+'else:\n'
-            to_return += self.__printTree(self.R[node],indent+'  ')
-        return to_return
-
-    __str__ = __repr__
-
-#    def __str__(self):
-#        to_return = 'Decision Tree Classifier; {} features\nThresholds: {}'.format(
-#            len(self.classes), str(self.T) if len(self.T) < 4 else 
-#            '[{0:.2f}, {1:.2f} ... {2:.2f}, {3:.2f}]'
-#             .format(self.T[0], self.T[1], self.T[-1], self.T[-2]))
-#        return to_return
-
-
-## CORE METHODS ################################################################
-
-
-    def train(self, X, Y, minParent=2, maxDepth=np.inf, nFeatures=None):
-        """
-        Trains a random forest classification tree.
-
-        Parameters
-        ----------
-        X : M x N numpy array of M data points with N features each.
-        Y : M x 1 numpy array containing class labels for each data point in X. 
-        minParent : (int) The minimum number of data required to split a node. 
-        maxDepth  : (int) The maximum depth of the decision tree. 
-        nFeatures : (int) The number of available features for splitting at each node.
-        """
-        n,d = arr(X).shape
-        nFeatures = d if nFeatures is None else min(nFeatures,d)
-        minScore = -1
-
-        self.classes = list(np.unique(Y)) if len(self.classes) == 0 else self.classes
-        Y = toIndex(Y)
-
-        sz = min(2 * n, 2**(maxDepth + 1))   # pre-allocate storage for tree:
-        L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
-
-        L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures)
-
-        self.L = L[0:last]
-        self.R = R[0:last]
-        self.F = F[0:last]
-        self.T = T[0:last]
-
-
-
-    def predict(self, X):
-        """
-        This method makes predictions on the test data X.
-
-        Parameters
-        ----------
-        X : M x N numpy array of M data points (N features each) at which to predict
-        """
-        Y_te = self.__dectree_test(X, self.L, self.R, self.F, self.T, 0).T.ravel()
-        return arr([[self.classes[int(i)]] for i in np.ravel(Y_te)])
-        # TODO: FIX + INEFFICIENT
-
-
-## HELPERS #####################################################################
-
-
-    def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures):
-        """
-        This is a recursive helper method that recusively trains the decision tree. Used in:
-            train
-        """
-        n,d = np.asmatrix(X).shape      # get data shape
-        num_classes = len(self.classes) # we'll assume Y is in 0..C-1 "index" form
-
-        if n < minParent or depth >= maxDepth or np.all(Y == Y[0]):
-            assert n != 0, ('TreeClassify.__dectree_train: tried to create size zero node')
-            F[next] = -1
-            #tmp = np.sum(to1ofK(Y, range(1, num_classes + 1)), axis=0)
-            pr = np.sum(to1ofK(Y, self.classes), axis=0)  # compute class distribution
-            T[next] = np.argmax(pr)     # and best prediction for this leaf
-            next += 1
-            return (L,R,F,T,next)
-
-        best_val = -np.inf
-        best_feat = -1
-        try_feat = np.random.permutation(d)
-        wts_left = np.arange(1.0*n)/n
-
-        for i_feat in try_feat[0:nFeatures]:   # try "n" randomly selected features:
-            dsorted = np.asarray(np.sort(X[:,i_feat].T)).ravel()
-            pi = np.argsort(X[:,i_feat].T)
-            tsorted = Y[pi].ravel()             # get targets, sorted by feature i_feat
-            can_split = np.append(np.asarray(dsorted[:-1] != dsorted[1:]), 0)
-            # TODO: include numerical tolerance in check
-
-            if not np.any(can_split):           # no way to split on this feature?
-                continue
-
-            y_left = np.cumsum(to1ofK(tsorted, self.classes), axis=0).astype(float)
-            y_right = y_left[-1,:] - y_left
-
-            for i in range(n):
-                y_left[i,:] /= i+1
-                y_right[i,:] /= n-1-i if i < n-1 else 1.0
-
-            h_root = np.dot(-y_left[-1,:], np.log(y_left[-1,:] + np.spacing(1)).T) 
-            h_left = -np.sum(y_left * np.log(y_left + np.spacing(1)), axis=1)
-            h_right = -np.sum(y_right * np.log(y_right + np.spacing(1)), axis=1)
-
-            IG = h_root - (wts_left * h_left + (1.0-wts_left) * h_right)
-            val = np.max((IG + np.spacing(1)) * can_split)
-            index = np.argmax((IG + np.spacing(1)) * can_split)
-
-            if val > best_val:
-                best_val = val
-                best_feat = i_feat
-                best_thresh = (dsorted[index] + dsorted[index + 1]) / 2
-
-        if best_feat == -1:    # if no viable features found, make a leaf:
-            F[next] = -1
-            tmp = np.sum(to1ofK(Y, self.classes), axis=0)
-            nc = np.max(tmp)
-            T[next] = np.argmax(tmp)
-            next += 1
-            return (L,R,F,T,next)
-
-        F[next] = best_feat
-        T[next] = best_thresh
-
-        go_left = X[:,F[next]] < T[next]
-        my_idx = next
-        next += 1
-
-        L[my_idx] = next
-        L,R,F,T,next = self.__dectree_train(X[go_left,:], Y[go_left], L, R, F, T, 
-            next, depth + 1, minParent, maxDepth, minScore, nFeatures)
-
-        R[my_idx] = next
-        L,R,F,T,next = self.__dectree_train(X[np.logical_not(go_left),:], Y[np.logical_not(go_left)], L, R, F, T, 
-            next, depth + 1, minParent, maxDepth, minScore, nFeatures)
-
-        return (L,R,F,T,next)
-
-
-    def __dectree_test(self, X, L, R, F, T, pos):
-        """
-        This is a recursive helper method that finds class labels
-        in the decision tree for prediction. Used in:
-            predict
-        """
-        M,N = X.shape
-        y_hat = np.zeros((M,1))
-
-        if F[pos] == -1:
-            y_hat[:] = T[pos]
-        else:
-            go_left = X[:,F[pos]] < T[pos]  # which data should follow left split?
-            y_hat[go_left]  = self.__dectree_test(X[go_left,:],  L, R, F, T, L[pos])
-            go_right = np.logical_not(go_left)  # other data go right:
-            y_hat[go_right] = self.__dectree_test(X[go_right,:], L, R, F, T, R[pos])
-
-        return y_hat
-
-
-################################################################################
-################################################################################
-################################################################################
-
