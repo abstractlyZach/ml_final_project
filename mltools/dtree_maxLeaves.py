@@ -70,7 +70,7 @@ class treeRegress(regressor):
 ## CORE METHODS ################################################################
 
 
-    def train(self, X, Y, minParent=2, maxDepth=np.inf, minScore=-1, nFeatures=None):
+    def train(self, X, Y, minParent=2, maxDepth=np.inf, minScore=-1, nFeatures=None, maxLeaves=np.inf):
         """
         Train a decision-tree regressor model
 
@@ -89,7 +89,7 @@ class treeRegress(regressor):
         sz = min(2 * n, 2**(maxDepth + 1))   # pre-allocate storage for tree:
         L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
 
-        L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures)
+        L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures, 0, maxLeaves)
 
         self.L = L[0:last]                              # store returned data into object
         self.R = R[0:last]                              
@@ -113,7 +113,7 @@ class treeRegress(regressor):
 ## HELPERS #####################################################################
 
 
-    def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures):
+    def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures, leaves, maxLeaves):
         """
         This is a recursive helper method that recusively trains the decision tree. Used in:
             train
@@ -124,7 +124,7 @@ class treeRegress(regressor):
         n,d = mat(X).shape
 
         # check leaf conditions...
-        if n < minParent or depth >= maxDepth or np.var(Y) < minScore:
+        if n < minParent or depth >= maxDepth or np.var(Y) < minScore or leaves >= maxLeaves:
             assert n != 0, ('TreeRegress.__dectree_train: tried to create size zero node')
             return self.__output_leaf(Y, n, L, R, F, T, next)
 
@@ -161,6 +161,14 @@ class treeRegress(regressor):
         go_left = X[:,F[next]] < T[next]
         my_idx = next
         next += 1
+
+        # if leaves is 0, then the split will create two leaves
+        # otherwise, leaves increases by one
+        # if ( leaves == 0 ):
+        #     leaves += 2
+        # else: 
+        #     leaves += 1
+
 
         # recur left
         L[my_idx] = next    
