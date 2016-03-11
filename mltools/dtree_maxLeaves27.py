@@ -117,17 +117,16 @@ class treeRegress(regressor):
             we can discuss if this isn't the best option for numbering
 
             -Zach
-int HeapPriorityQueue<T,tgt>::parent(int i) const
+int parent(int i) const
 {
 	return (i-1)/2;
 }
-int HeapPriorityQueue<T,tgt>::left_child(int i) const
+int left_child(int i) const
 {
 	return 2*i + 1;
 }
 
-template<class T, bool (*tgt)(const T& a, const T& b)>
-int HeapPriorityQueue<T,tgt>::right_child(int i) const
+int right_child(int i) const
 {
 	return 2*i + 2;
 }
@@ -153,10 +152,10 @@ int HeapPriorityQueue<T,tgt>::right_child(int i) const
         self.nY[0] = Y[go_left]
 #        self.bestval[0] = best_val
         
-        best_feat,best_thresh,best_val = self.__dectree_train(nextX[0], nextY[0], L, R, F, T, 1, 0, minParent, maxDepth, minScore, nFeatures)
+        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 1, 0, minParent, maxDepth, minScore, nFeatures)
         self.div[1] = [best_feat,best_thresh]
         self.gain[1] = [best_val]
-        best_feat,best_thresh,best_val = self.__dectree_train(nextX[0], nextY[0], L, R, F, T, 2, 0, minParent, maxDepth, minScore, nFeatures)
+        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 2, 0, minParent, maxDepth, minScore, nFeatures)
         self.div[2] = [best_feat,best_thresh]
         self.gain[2] = [best_val]
         
@@ -166,9 +165,9 @@ int HeapPriorityQueue<T,tgt>::right_child(int i) const
             idx = max(self.gain, key = lambda i: self.gain[i])
             if (idx > last):
                 last = idx
-            if div[idx][0] == -1: #(best_feat == -1) no split possible
+            if self.div[idx][0] == -1: #(best_feat == -1) no split possible
                 F[idx] = -1
-                T[idx] = np.mean(nextY[_p(idx)])
+                T[idx] = np.mean(self.nY[_p(idx)])
                 break
             
             best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, 0, \
