@@ -6,6 +6,7 @@ from .utils import toIndex, fromIndex, to1ofK, from1ofK
 from numpy import asarray as arr
 from numpy import atleast_2d as twod
 from numpy import asmatrix as mat
+from collections import defaultdict
 
 
 ################################################################################
@@ -30,7 +31,16 @@ class treeRegress(regressor):
         self.R = arr([0])           # indices of right children
         self.F = arr([0])           # feature to split on (-1 = leaf = predict)
         self.T = arr([0])           # threshold to split on (prediction value if leaf)
-   
+        
+        
+        self.information_gain = dict()
+        self.nX = dict() #keeps track of remaining data on that branch
+        self.nY = dict() #left branch and right branch
+#        self.bestval = dict()
+        self.div = defaultdict(list) #        [best_feat,best_thresh]
+        self.gain = defaultdict(int) #        best_val
+
+         
         if len(args) or len(kwargs):     # if we were given optional arguments,
             self.train(*args, **kwargs)    #  just pass them through to "train"
  
@@ -44,6 +54,7 @@ class treeRegress(regressor):
         else:
             to_return = self.__printTree(0,'  ')
         return to_return
+
 
     def __printTree(self,node,indent):
         to_return = ''
@@ -70,6 +81,10 @@ class treeRegress(regressor):
 ## CORE METHODS ################################################################
 
 
+    def _p(self, i):
+        '''Returns the index of it's parent'''
+        return (i-1)//2;
+        
     def train(self, X, Y, minParent=2, maxDepth=np.inf, minScore=-1, nFeatures=None, maxLeaves=np.inf):
         """
         Train a decision-tree regressor model
@@ -83,14 +98,6 @@ class treeRegress(regressor):
         maxDepth  : (int)   Maximum depth of the decision tree. 
         nFeatures : (int)   Number of available features for splitting at each node.
         """
-        n,d = mat(X).shape
-        nFeatures = min(nFeatures if nFeatures else d, d)
-        leaves = 0
-
-        sz = min(2 * n, 2**(maxDepth + 1))   # pre-allocate storage for tree:
-        L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
-
-        self.information_gain = dict()
         '''
         using this numbering system for identifying nodes for now:
                              1
@@ -110,16 +117,71 @@ class treeRegress(regressor):
             we can discuss if this isn't the best option for numbering
 
             -Zach
-        '''
+int HeapPriorityQueue<T,tgt>::parent(int i) const
+{
+	return (i-1)/2;
+}
+int HeapPriorityQueue<T,tgt>::left_child(int i) const
+{
+	return 2*i + 1;
+}
 
+template<class T, bool (*tgt)(const T& a, const T& b)>
+int HeapPriorityQueue<T,tgt>::right_child(int i) const
+{
+	return 2*i + 2;
+}
+
+        '''
+            
+        n,d = mat(X).shape
+        nFeatures = min(nFeatures if nFeatures else d, d)
+        leaves = 0
+
+        sz = min(2*n, 2**(maxLeaves + 1))   #Changed This # pre-allocate storage for tree:
+        L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
+        
+
+        best_feat, best_thresh, best_val = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures)
+        L[0] = 1
+        R[0] = 2
+        F[0] = best_feat
+        T[0] = best_thresh
+
+        go_left = X[:,best_feat] < T[0]        
+        self.nX[0] = X[go_left,:]
+        self.nY[0] = Y[go_left]
+#        self.bestval[0] = best_val
+        
+        best_feat,best_thresh,best_val = self.__dectree_train(nextX[0], nextY[0], L, R, F, T, 1, 0, minParent, maxDepth, minScore, nFeatures)
+        self.div[1] = [best_feat,best_thresh]
+        self.gain[1] = [best_val]
+        best_feat,best_thresh,best_val = self.__dectree_train(nextX[0], nextY[0], L, R, F, T, 2, 0, minParent, maxDepth, minScore, nFeatures)
+        self.div[2] = [best_feat,best_thresh]
+        self.gain[2] = [best_val]
+        
+        last = 0
+        
         while leaves <= maxLeaves:
-            L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, \
+            idx = max(self.gain, key = lambda i: self.gain[i])
+            if (idx > last):
+                last = idx
+            if div[idx][0] == -1: #(best_feat == -1) no split possible
+                F[idx] = -1
+                T[idx] = np.mean(nextY[_p(idx)])
+                break
+            
+            best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, 0, \
                 minParent, minScore, nFeatures, 0, maxLeaves)
 
-        self.L = L #[0:last]                              # store returned data into object
-        self.R = R #[0:last]                              
-        self.F = F #[0:last]
-        self.T = T #[0:last]
+#        self.leaves = defaultdict(list)
+
+
+        self.L = L[0:last]                              # store returned data into object
+        self.R = R[0:last]                              
+        self.F = F[0:last]
+        self.T = T[0:last]
+    
 
 
 
@@ -182,24 +244,29 @@ class treeRegress(regressor):
                 best_val = val
                 best_feat = i_feat
                 best_thresh = (dsorted[idx] + dsorted[idx + 1]) / 2
+        
+        return best_feat, best_thresh, best_val
 
-        # if no split possible, output leaf (prediction) node
-        if best_feat == -1:         
-            return self.__output_leaf(Y, n, L, R, F, T, next)
-
-        # split data on feature i_feat, value (tsorted[idx] + tsorted[idx + 1]) / 2
-        F[next] = best_feat
-        T[next] = best_thresh
-        go_left = X[:,F[next]] < T[next]
-        my_idx = next
-        L[my_idx] = next * 2
-        R[my_idx] = (next * 2) + 1
-        next += 1
-
-
-
-
-        return (L, R, F, T, next)
+#        # if no split possible, output leaf (prediction) node
+#        if best_feat == -1:         
+#            return self.__output_leaf(Y, n, L, R, F, T, next)
+#
+#        value_from_this_split = best_val
+#        
+#        # split data on feature i_feat, value (tsorted[idx] + tsorted[idx + 1]) / 2
+#        self.F[next] = best_feat
+#        self.T[next] = best_thresh
+#        
+#        go_left = X[:,F[next]] < T[next]
+#        my_idx = next
+#        self.L[my_idx] = next * 2
+#        self.R[my_idx] = (next * 2) + 1
+#        next += 1
+#
+#
+#
+#
+#        return (L, R, F, T, next)
 
 
 #
