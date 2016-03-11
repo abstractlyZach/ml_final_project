@@ -117,6 +117,17 @@ class treeRegress(regressor):
             we can discuss if this isn't the best option for numbering
 
             -Zach
+            
+            let's do...
+                            0
+                    /                   \
+                   1                      2
+                      \                 /    \
+               (3)     4               5      6
+              /   \   /  \           /       /  \
+            (7)   (8) 9  10        11  (12) 13  14
+            -Janice
+            
 int parent(int i) const
 {
 	return (i-1)/2;
@@ -135,51 +146,88 @@ int right_child(int i) const
             
         n,d = mat(X).shape
         nFeatures = min(nFeatures if nFeatures else d, d)
-        leaves = 0
 
-        sz = min(2*n, 2**(maxLeaves + 1))   #Changed This # pre-allocate storage for tree:
+        sz = min(2*n, 6*(maxLeaves))   #Changed This # pre-allocate storage for tree:
+        # !!! Size isn't maxLeaves because that would me trees are guaranteed to be well balanced
         L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
         
-
-        best_feat, best_thresh, best_val = self.__dectree_train(X, Y, L, R, F, T, 0, 0, minParent, maxDepth, minScore, nFeatures)
+                            #    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures):
+        best_feat, best_thresh, best_val = self.__dectree_train(X, Y, L, R, F, T, 0, minParent, minScore, nFeatures)
         L[0] = 1
         R[0] = 2
         F[0] = best_feat
         T[0] = best_thresh
-
+#        print X[go_left,:].shape
+#        print go_left
         go_left = X[:,best_feat] < T[0]        
         self.nX[0] = X[go_left,:]
         self.nY[0] = Y[go_left]
 #        self.bestval[0] = best_val
-        
-        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 1, 0, minParent, maxDepth, minScore, nFeatures)
+#       def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures, leaves, maxLeaves):
+                                        #    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures):
+        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 1, minParent, minScore, nFeatures)
         self.div[1] = [best_feat,best_thresh]
         self.gain[1] = [best_val]
-        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 2, 0, minParent, maxDepth, minScore, nFeatures)
+        best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 2, minParent, minScore, nFeatures)
         self.div[2] = [best_feat,best_thresh]
         self.gain[2] = [best_val]
-        
+        print "HERE"
         last = 0
         
-        while leaves <= maxLeaves:
+        leaves = 1
+        print maxLeaves
+        while leaves < maxLeaves:
+            print "HI"
             idx = max(self.gain, key = lambda i: self.gain[i])
+            best_feat, best_thresh = self.div[idx]
             if (idx > last):
                 last = idx
-            if self.div[idx][0] == -1: #(best_feat == -1) no split possible
+            if best_feat == -1: #(best_feat == -1) no split possible
                 F[idx] = -1
-                T[idx] = np.mean(self.nY[_p(idx)])
+                T[idx] = np.mean(self.nY[self._p(idx)])
                 break
+            left = 2*idx + 1
+            right = 2*idx + 2
+            L[idx] = left
+            R[idx] = right
+            F[idx] = best_feat
+            T[idx] = best_thresh
+
+            go_left = X[:,best_feat] < T[0]        
+            self.nX[idx] = X[go_left,:]
+            self.nY[idx] = Y[go_left]
+
+            best_feat,best_thresh,best_val = self.__dectree_train(self.nX[idx], self.nY[idx], L, R, F, T, left, minParent, minScore, nFeatures)
+            self.div[left] = [best_feat,best_thresh]
+            self.gain[left] = [best_val]
+            best_feat,best_thresh,best_val = self.__dectree_train(self.nX[idx], self.nY[idx], L, R, F, T, right, minParent, minScore, nFeatures)
+            self.div[right] = [best_feat,best_thresh]
+            self.gain[right] = [best_val]
             
-            best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, 0, \
-                minParent, minScore, nFeatures, 0, maxLeaves)
+            del self.gain[idx]
+            del self.div[idx]
+            
+            leaves += 1
+#            best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, idx, \
+#                minParent, minScore, nFeatures, 0, maxLeaves)
+
 
 #        self.leaves = defaultdict(list)
-
-
+        print "out"
+        last += 1 #because [0:last] excludes 'last' 
         self.L = L[0:last]                              # store returned data into object
         self.R = R[0:last]                              
         self.F = F[0:last]
         self.T = T[0:last]
+        
+        
+        for i in range(len(self.F)):
+            if i > last:
+                break
+            if self.F[i] == 0.:
+                self.F[i] = -1
+        
+        
     
 
 
@@ -197,7 +245,7 @@ int right_child(int i) const
 
     
 ## HELPERS #####################################################################
-    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures, leaves, maxLeaves):
+    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures):
         """
         Zach, Sharon, and Janice's decision tree training function: based on handling complexity through
         the maximum number of leaves.
@@ -216,7 +264,7 @@ int right_child(int i) const
                 b. construct tree
         """
         n, d = mat(X).shape
-        if n < minParent or leaves >= maxLeaves or np.var(Y) < minScore:
+        if n < minParent or np.var(Y) < minScore:
             assert n != 0, ('TreeRegress.__dectree_train: tried to create size zero node')
             # TODO: return something. maybe get rid of this whole conditional since it seems to be only used
             #           for recursion halting.
