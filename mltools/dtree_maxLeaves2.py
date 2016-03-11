@@ -70,7 +70,7 @@ class treeRegress(regressor):
 ## CORE METHODS ################################################################
 
 
-    def train(self, X, Y, minParent=2, maxDepth=np.inf, minScore=-1, nFeatures=None, maxLeaves=np.inf):
+    def train(self, X, Y, minParent=2, minScore=-1, nFeatures=None, maxLeaves=np.inf):
         """
         Train a decision-tree regressor model
 
@@ -87,7 +87,7 @@ class treeRegress(regressor):
         nFeatures = min(nFeatures if nFeatures else d, d)
         leaves = 0
 
-        sz = min(2 * n, 2**(maxDepth + 1))   # pre-allocate storage for tree:
+        sz = maxLeaves   # pre-allocate storage for tree:
         L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
 
         self.information_gain = dict()
@@ -112,14 +112,59 @@ class treeRegress(regressor):
             -Zach
         '''
 
-        while leaves <= maxLeaves:
-            L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, \
-                minParent, minScore, nFeatures, 0, maxLeaves)
+        # while leaves <= maxLeaves:
+        #     L, R, F, T, last = self.__dectree_train(X, Y, L, R, F, T, 0, \
+        #         minParent, minScore, nFeatures, 0, maxLeaves)
 
-        self.L = L #[0:last]                              # store returned data into object
-        self.R = R #[0:last]                              
-        self.F = F #[0:last]
-        self.T = T #[0:last]
+        # self.L = L #[0:last]                              # store returned data into object
+        # self.R = R #[0:last]                              
+        # self.F = F #[0:last]
+        # self.T = T #[0:last]
+        # print(self.L)
+        while leaves <= maxLeaves:
+            n, d = mat(X).shape
+            if n < minParent or leaves >= maxLeaves or np.var(Y) < minScore:
+                assert n != 0, ('TreeRegress.__dectree_train: tried to create size zero node')
+                # TODO: return something. maybe get rid of this whole conditional since it seems to be only used
+                #           for recursion halting.
+
+            best_val = np.inf
+            best_feat = -1
+            try_feat = np.random.permutation(d)
+
+            # ...otherwise, search over (allowed) features
+            for i_feat in try_feat[0:nFeatures]:
+                dsorted = arr(np.sort(X[:,i_feat].T)).ravel()                       # sort data...
+                pi = np.argsort(X[:,i_feat].T)                                      # ...get sorted indices...
+                tsorted = Y[pi].ravel()                                             # ...and sort targets by feature ID
+                can_split = np.append(arr(dsorted[:-1] != dsorted[1:]), 0)
+                print(can_split)          # which indices are valid split points?
+
+                if not np.any(can_split):          # no way to split on this feature?
+                    continue
+
+                # find min weighted variance among split points
+                val,idx = self.__min_weighted_var(tsorted, can_split, n)
+
+                # save best feature and split point found so far
+                if val < best_val:
+                    best_val = val
+                    best_feat = i_feat
+                    best_thresh = (dsorted[idx] + dsorted[idx + 1]) / 2
+
+            # if no split possible, output leaf (prediction) node
+            if best_feat == -1:         
+                return self.__output_leaf(Y, n, L, R, F, T, next)
+
+            # split data on feature i_feat, value (tsorted[idx] + tsorted[idx + 1]) / 2
+            F[next] = best_feat
+            T[next] = best_thresh
+            go_left = X[:,F[next]] < T[next]
+            my_idx = next
+            L[my_idx] = next * 2
+            R[my_idx] = (next * 2) + 1
+            next += 1
+            leaves++
 
 
 
@@ -199,78 +244,6 @@ class treeRegress(regressor):
 
         return (L, R, F, T, next)
 
-'''
-
-    def __dectree_train(self, X, Y, L, R, F, T, next, depth, minParent, maxDepth, minScore, nFeatures, leaves, maxLeaves):
-        """
-        This is a recursive helper method that recusively trains the decision tree. Used in:
-            train
-
-        TODO:
-            compare for numerical tolerance
-        """
-        n,d = mat(X).shape
-
-        # check leaf conditions...
-        if n < minParent or depth >= maxDepth or np.var(Y) < minScore or leaves >= maxLeaves:
-            assert n != 0, ('TreeRegress.__dectree_train: tried to create size zero node')
-            return self.__output_leaf(Y, n, L, R, F, T, next)
-
-        best_val = np.inf
-        best_feat = -1
-        try_feat = np.random.permutation(d)
-
-        # ...otherwise, search over (allowed) features
-        for i_feat in try_feat[0:nFeatures]:
-            dsorted = arr(np.sort(X[:,i_feat].T)).ravel()                       # sort data...
-            pi = np.argsort(X[:,i_feat].T)                                      # ...get sorted indices...
-            tsorted = Y[pi].ravel()                                             # ...and sort targets by feature ID
-            can_split = np.append(arr(dsorted[:-1] != dsorted[1:]), 0)          # which indices are valid split points?
-
-            if not np.any(can_split):          # no way to split on this feature?
-                continue
-
-            # find min weighted variance among split points
-            val,idx = self.__min_weighted_var(tsorted, can_split, n)
-
-            # save best feature and split point found so far
-            if val < best_val:
-                best_val = val
-                best_feat = i_feat
-                best_thresh = (dsorted[idx] + dsorted[idx + 1]) / 2
-
-        # if no split possible, output leaf (prediction) node
-        if best_feat == -1:         
-            return self.__output_leaf(Y, n, L, R, F, T, next)
-
-        # split data on feature i_feat, value (tsorted[idx] + tsorted[idx + 1]) / 2
-        F[next] = best_feat
-        T[next] = best_thresh
-        go_left = X[:,F[next]] < T[next]
-        my_idx = next
-        next += 1
-
-        # if leaves is 0, then the split will create two leaves
-        # otherwise, leaves increases by one
-        # if ( leaves == 0 ):
-        #     leaves += 2
-        # else: 
-        #     leaves += 1
-
-
-        # recur left
-        # L[my_idx] = next    
-        # L,R,F,T,next = self.__dectree_train(X[go_left,:], Y[go_left], L, R, F, T, 
-        #     next, depth + 1, minParent, maxDepth, minScore, nFeatures)
-
-        # # recur right
-        # R[my_idx] = next    
-        # L,R,F,T,next = self.__dectree_train(X[np.logical_not(go_left),:], Y[np.logical_not(go_left)], L, R, F, T, 
-        #     next, depth + 1, minParent, maxDepth, minScore, nFeatures)
-
-        return (L,R,F,T,next)
-
-'''
 
     def __dectree_test(self, X, L, R, F, T, pos):
         """
@@ -342,6 +315,6 @@ class treeRegress(regressor):
         return (val,idx)
 
 
-################################################################################
-################################################################################
-################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
