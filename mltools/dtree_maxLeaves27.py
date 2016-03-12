@@ -146,10 +146,15 @@ int right_child(int i) const
         n,d = mat(X).shape
         nFeatures = min(nFeatures if nFeatures else d, d)
 
-        sz = min(2*n, 6*(maxLeaves))   #Changed This # pre-allocate storage for tree:
+        # sz = min(2*n, 6*(maxLeaves))   #Changed This # pre-allocate storage for tree:
+        sz = min(2*n, (2**maxLeaves)-1)
         # !!! Size isn't maxLeaves because that would me trees are guaranteed to be well balanced
+        leaves = 0
+
+        # sz = maxLeaves #min(2*n, 2**(maxLeaves + 1))   #Changed This # pre-allocate storage for tree:
+
         L, R, F, T = np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,)), np.zeros((sz,))
-        
+        # print(sz,L.shape,L)
                             #    def __dectree_train(self, X, Y, L, R, F, T, next, minParent, minScore, nFeatures):
         best_feat, best_thresh, best_val = self.__dectree_train(X, Y, L, R, F, T, 0, minParent, minScore, nFeatures)
         L[0] = 1
@@ -170,13 +175,13 @@ int right_child(int i) const
         best_feat,best_thresh,best_val = self.__dectree_train(self.nX[0], self.nY[0], L, R, F, T, 2, minParent, minScore, nFeatures)
         self.div[2] = [best_feat,best_thresh]
         self.gain[2] = [best_val]
-        print "HERE"
         last = 0
         
+
         leaves = 1
-        print maxLeaves
-        while leaves < maxLeaves:
-            print "HI"
+
+        # try:
+        while leaves <= maxLeaves:
             idx = max(self.gain, key = lambda i: self.gain[i])
             best_feat, best_thresh = self.div[idx]
             if (idx > last):
@@ -185,8 +190,10 @@ int right_child(int i) const
                 F[idx] = -1
                 T[idx] = np.mean(self.nY[self._p(idx)])
                 break
+
             left = 2*idx + 1
             right = 2*idx + 2
+
             L[idx] = left
             R[idx] = right
             F[idx] = best_feat
@@ -195,6 +202,10 @@ int right_child(int i) const
             go_left = X[:,best_feat] < T[0]        
             self.nX[idx] = X[go_left,:]
             self.nY[idx] = Y[go_left]
+            # print(go_left)
+            print(F[0:30])
+            print(T[0:30])
+            print()
 
             best_feat,best_thresh,best_val = self.__dectree_train(self.nX[idx], self.nY[idx], L, R, F, T, left, minParent, minScore, nFeatures)
             self.div[left] = [best_feat,best_thresh]
@@ -207,12 +218,22 @@ int right_child(int i) const
             del self.div[idx]
             
             leaves += 1
+        # except:
+        #     print(L)
+        #     print(idx)
 #            best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, idx, \
 #                minParent, minScore, nFeatures, 0, maxLeaves)
 
+            # best_feat,best_thresh,best_val = self.__dectree_train(X, Y, L, R, F, T, 0, \
+            #     minParent, minScore, nFeatures, 0, maxLeaves)
+            # leaves += 1
+
 
 #        self.leaves = defaultdict(list)
-        print "out"
+
+
+#        self.leaves = defaultdict(list)
+        print("out")
         last += 1 #because [0:last] excludes 'last' 
         self.L = L[0:last]                              # store returned data into object
         self.R = R[0:last]                              
@@ -273,7 +294,7 @@ int right_child(int i) const
         try_feat = np.random.permutation(d)
 
         # ...otherwise, search over (allowed) features
-        for i_feat in try_feat[0:nFeatures]:
+        for i_feat in try_feat[0:nFeatures-1]:
             dsorted = arr(np.sort(X[:,i_feat].T)).ravel()                       # sort data...
             pi = np.argsort(X[:,i_feat].T)                                      # ...get sorted indices...
             tsorted = Y[pi].ravel()                                             # ...and sort targets by feature ID
