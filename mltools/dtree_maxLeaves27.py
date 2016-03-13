@@ -181,7 +181,7 @@ int right_child(int i) const
         leaves = 1
 
         # try:
-        while leaves <= maxLeaves:
+        while leaves < maxLeaves:
             idx = max(self.gain, key = lambda i: self.gain[i])
             best_feat, best_thresh = self.div[idx]
             if (idx > last):
@@ -203,9 +203,9 @@ int right_child(int i) const
             self.nX[idx] = X[go_left,:]
             self.nY[idx] = Y[go_left]
             # print(go_left)
-            print(F[0:30])
-            print(T[0:30])
-            print()
+            # print(F[0:30])
+            # print(T[0:30])
+            # print()
 
             best_feat,best_thresh,best_val = self.__dectree_train(self.nX[idx], self.nY[idx], L, R, F, T, left, minParent, minScore, nFeatures)
             self.div[left] = [best_feat,best_thresh]
@@ -233,7 +233,7 @@ int right_child(int i) const
 
 
 #        self.leaves = defaultdict(list)
-        print("out")
+        # print("out")
         last += 1 #because [0:last] excludes 'last' 
         self.L = L[0:last]                              # store returned data into object
         self.R = R[0:last]                              
@@ -249,7 +249,10 @@ int right_child(int i) const
         
         
     
-
+        # print(self.L)
+        # print(self.R)
+        # print(self.F)
+        # print(self.T)
 
 
     def predict(self, X):
@@ -260,6 +263,7 @@ int right_child(int i) const
         ----------
         X : M x N numpy array containing M data points of N features each
         """
+        print(self.__dectree_test(X, self.L, self.R, self.F, self.T, 0))
         return self.__dectree_test(X, self.L, self.R, self.F, self.T, 0)
 
 
@@ -416,14 +420,18 @@ int right_child(int i) const
         """
         M,N = X.shape
         y_hat = np.zeros((M,1))
-        
-        if F[pos] == -1:
-            y_hat[:] = T[pos]
-        else:
-            go_left = X[:,F[pos]] < T[pos]  # which data should follow left split?
-            y_hat[go_left]  = self.__dectree_test(X[go_left,:],  L, R, F, T, L[pos])
-            go_right = np.logical_not(go_left)  # other data go right:
-            y_hat[go_right] = self.__dectree_test(X[go_right,:], L, R, F, T, R[pos])
+        if pos < L.shape[0]:
+            if L[pos] != 0 and R[pos] != 0:
+                if F[pos] == -1:
+                    y_hat[:] = T[pos]
+                else:
+                    go_left = X[:,F[pos]] < T[pos]  # which data should follow left split?
+                    y_hat[go_left]  = self.__dectree_test(X[go_left,:],  L, R, F, T, L[pos])
+                    go_right = np.logical_not(go_left)  # other data go right:
+                    y_hat[go_right] = self.__dectree_test(X[go_right,:], L, R, F, T, R[pos])
+
+            else:
+                y_hat[:] = T[pos]
 
         return y_hat
 
