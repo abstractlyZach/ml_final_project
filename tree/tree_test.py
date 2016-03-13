@@ -26,3 +26,23 @@ current_node.split(77, 334.85, 44, 22)
 decision_tree.print_tree()
 print()
 print()
+
+
+current_node = current_node.left
+current_node.split(99, 37.8, 55, 93)
+decision_tree.print_tree()
+print()
+print()
+
+current_node = current_node.left
+current_node.split(99, 37.8, 55, 93)
+current_node = current_node.left
+current_node.split(99, 37.8, 55, 93)
+current_node = current_node.left
+current_node.split(99, 37.8, 55, 93)
+current_node = current_node.left
+current_node.split(99, 37.8, 55, 93)
+
+decision_tree.print_tree()
+
+current_node.print_tree()
