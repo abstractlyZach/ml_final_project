@@ -1,3 +1,6 @@
+# code written by Richard Pattis
+# for the course library for ICS 33
+
 from goody import irange
 
 

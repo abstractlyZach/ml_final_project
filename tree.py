@@ -8,6 +8,9 @@ class TN:
 		self._is_leaf = True
 		self.id = id # placed here for debugging purposes
 
+	def is_leaf(self):
+		return self._is_leaf
+
 	def size(self):
 		if self.left == None:
 			left_size = 0
@@ -18,9 +21,6 @@ class TN:
 		else:
 			right_size = self.right.size()
 		return 1 + right_size + left_size
-
-	def is_leaf(self):
-		return self._is_leaf
 
 	def height(self):
 		if self.left == None:
@@ -33,9 +33,22 @@ class TN:
 		else: # both left and right are nodes
 			return 1 + max(self.left.height(), self.right.height())
 
+	def leaves(self):
+		'''returns number of leaves in subtree'''
+		if self.is_leaf():
+			return 1
+		else:
+			if self.left == None:
+				return self.right.leaves()
+			elif self.right == None:
+				return self.left.leaves()
+			else:
+				return self.right.leaves() + self.left.leaves()
+
 	def predict(self, X=None):
 		'''takes an array of features (X) and passes that feature down the tree until it
-		finds a decision.'''
+		finds a decision.
+		also, X only = None for print_tree()'''
 		if self.is_leaf():
 			return self._prediction
 		else:
@@ -78,6 +91,7 @@ class TN:
 		else:
 			self.left = TN(left_prediction, parent=self)
 			self.right = TN(right_prediction, parent=self)
+
 
 
 

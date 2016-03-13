@@ -3,11 +3,13 @@ import tree
 
 decision_tree = tree.TN(3, id=0)
 decision_tree.print_tree()
+assert decision_tree.leaves() == 1
 print()
 print()
 
 current_node = decision_tree
 current_node.split(2, 5.4, 2, 6)
+assert decision_tree.leaves() == 2
 
 decision_tree.print_tree()
 print()
@@ -15,6 +17,7 @@ print()
 
 current_node = current_node.left
 current_node.split(99, 37.8, 55, 93)
+assert decision_tree.leaves() == 3
 
 decision_tree.print_tree()
 print()
@@ -60,4 +63,6 @@ decision_tree.print_tree()
 assert decision_tree.predict([1, 2, 3]) == 1
 assert decision_tree.predict([2,3,4]) == 2
 assert decision_tree.predict([5,5,5]) == 4
+
+assert decision_tree.leaves() == 4
 
