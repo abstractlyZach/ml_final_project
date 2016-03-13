@@ -45,7 +45,7 @@ class TN:
 				return self.right.predict(X)
 
 
-	def print_tree(self, indent_char ='....-....', indent_delta=3):
+	def print_tree(self, indent_char ='.........', indent_delta=3):
 		'''Right branch details the case where the answer to the node's split query (feature x2 > 5, etc.)
 			is TRUE.'''
 		def print_tree_1(indent,atree):
@@ -55,7 +55,7 @@ class TN:
 				print(indent * indent_char, atree.predict())
 			else:
 				print_tree_1(indent+indent_delta,atree.right)
-				print(indent*indent_char+'(X{}>={}?)'.format(atree._feature_to_split, atree._feature_threshold))
+				print(indent*indent_char+'(X{}>{}?)'.format(atree._feature_to_split, atree._feature_threshold))
 				print_tree_1(indent+indent_delta,atree.left)
 		print_tree_1(0, self) 
 		print('height is {}'.format(self.height()))
