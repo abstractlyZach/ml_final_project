@@ -24,21 +24,30 @@ class TN:
 
 	def height(self):
 		if self.left == None:
-			if self.right == None:
+			if self.right == None: # both nodes are empty
 				return 0
-			else:
+			else: # only left node is empty
 				return 1 + self.right.height()
-		if self.right == None:
+		if self.right == None: # only right node is empty
 			return 1 + self.left.height()
-		else:
+		else: # both left and right are nodes
 			return 1 + max(self.left.height(), self.right.height())
 
-	def predict(self):
-		return self._prediction
+	def predict(self, X=None):
+		'''takes an array of features (X) and passes that feature down the tree until it
+		finds a decision.'''
+		if self.is_leaf():
+			return self._prediction
+		else:
+			if X[self._feature_to_split] < self._feature_threshold:
+				return self.left.predict(X)
+			else:
+				return self.right.predict(X)
+
 
 	def print_tree(self, indent_char ='....-....', indent_delta=3):
 		'''Right branch details the case where the answer to the node's split query (feature x2 > 5, etc.)
-			is true.'''
+			is TRUE.'''
 		def print_tree_1(indent,atree):
 			if atree.is_leaf():
 				# print('PREDICTING FOR NODE WITH ID: {}'.format(atree.id))
@@ -54,8 +63,10 @@ class TN:
 
 	def split(self, feature_to_split, feature_threshold, left_prediction, right_prediction):
 		if not self.is_leaf():
-			raise SplitError
-
+			print('Tried to split on tree node that was not a leaf.')
+			print('node id: {}'.format(self.id))
+			raise SplitError(self)
+			
 		del self._prediction
 		self._is_leaf = False
 		self._feature_to_split = feature_to_split
@@ -75,5 +86,4 @@ class TN:
 
 
 class SplitError(Exception):
-	def __init__(self):
-		print('Tried to split on tree node that was not a leaf.')
+	pass
