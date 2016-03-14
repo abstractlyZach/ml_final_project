@@ -31,12 +31,13 @@ class treeRegress(regressor):
 			leaves.add(current_node.left)
 			leaves.add(current_node.right)
 
+	def predict(self, X):
+		to_return = np.array()
+		for value in X:
+			to_return.append(self.tree.predict(value))
+		return to_return
 
 
-			# print(feature_data)
-
-		# while self.tree.leaves() < maxLeaves:
-		# 	best_val = np.inf
 
 	def __best_feature(self, X, Y):
 		rows, num_features = mat(X).shape
