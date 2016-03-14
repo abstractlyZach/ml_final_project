@@ -50,8 +50,8 @@ class treeRegress(regressor):
 			for split_index in range(len(feature_data) - 1): # create splits between data
 				split1 = feature_data[:split_index + 1]
 				split2 = feature_data[split_index + 1:]
-				weighted_variance = self.__weighted_variance(split1, split2, Y) 
-				if weighted_variance < min_weighted_variance: 
+				variance_reduction = self.__variance_reduction(split1, split2, Y) 
+				if variance_reduction > max_variance_reduction: 
 				# if the weighted variance is the least, save the weighted_variance, feature, and index to split on that feature
 					best_val = weighted_variance
 					best_feature = feature
@@ -65,9 +65,29 @@ class treeRegress(regressor):
 		Yhat_right = np.mean(Y[go_right])
 		return (Yhat_left, Yhat_right)
 
-	def __weighted_variance(self, split1, split2, Y):
-		# what do i do here
-		return 0
+	def __variance_reduction(self, split1, split2, Y):
+		'''measures the weighted variance reduction'''
+		original_var = np.var(Y)
+		# calculate split1's variance
+		total = 0
+		for index, X_value in split1:
+			total += Y[index]
+		avg = total / len(split1)
+		total = 0
+		for index, X_value in split1:
+			total += (X_value - avg) ** 2
+		split1_var = total / len(split1)
+		# calculate split1's variance
+		total = 0
+		for index, X_value in split2:
+			total += Y[index]
+		avg = total / len(split2)
+		total = 0
+		for index, X_value in split2:
+			total += (X_value - avg) ** 2
+		split2_var = total / len(split2)
+		return (len(split1) / len(Y)) * (original_var - split1_var) + \
+					(len(split2) / len(Y)) * (original_var - split2_var) 
 
 	def print_tree(self):
 		self.tree.print_tree()
