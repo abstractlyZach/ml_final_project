@@ -22,8 +22,9 @@ print('====' * 8)
 print('beginning IRIS.txt\n\n')
 
 data = np.genfromtxt('data/iris.txt')
-X = test[:, :-1]
-Y = test[:, -1:]
+X = data[:, :-1]
+Y = data[:, -1:]
+
 
 learner = dtree_z.treeRegress()
 learner.train(X, Y, 100)
