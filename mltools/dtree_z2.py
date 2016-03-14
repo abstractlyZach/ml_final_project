@@ -77,16 +77,15 @@ class treeRegress(regressor):
         best_val = 0
         best_feature = 0
         best_thresh = 0
-        print ("under initializations")
         print (X[:,0].shape)
         for feature in range(num_features): # examine each feature
-            feature_data = np.zeros(rows)
+            feature_data = [None]*rows #***saves appending time 
             for index, x_value in enumerate(X[:, feature]): # attach each value to its index
-                feature_data.append((index, x_value))
+            feature_data[index] = (index, x_value, Y[index])
             feature_data.sort(key=lambda x: x[1]) # sort values
-            for split_index in range(len(feature_data) - 1): # create splits between data
-                split1 = feature_data[:split_index + 1]
-                split2 = feature_data[split_index + 1:]
+            for split_index in range(0,len(feature_data) - 1,10): # create splits between data
+                split1 = feature_data[:split_index + 1] #^*** go by ten's to speed things up
+                split2 = feature_data[split_index + 1:] #^*** model is not as good\
                 if split1[-1][1] == split2[0][1]: # if the two values that are to be split are equal
                     continue
                 variance_reduction = self.__variance_reduction(split1, split2, Y) 
@@ -112,23 +111,11 @@ class treeRegress(regressor):
         '''measures the weighted variance reduction'''
         original_var = np.var(Y)
         # calculate split1's variance
-        total = 0
-        for index, X_value in split1:
-            total += Y[index]
-        avg = total / len(split1)
-        total = 0
-        for index, X_value in split1:
-            total += (Y[index] - avg) ** 2
-        split1_var = total / len(split1)
+        arr1 = np.array(split1).T 
+        split1_var = np.var(arr1[2])
         # calculate split1's variance
-        total = 0
-        for index, X_value in split2:
-            total += Y[index]
-        avg = total / len(split2)
-        total = 0
-        for index, X_value in split2:
-            total += (Y[index] - avg) ** 2
-        split2_var = total / len(split2)
+        arr2 = np.array(split2).T 
+        split2_var = np.var(arr2[2])
         split1_weighted_variance = (len(split1) / len(Y)) * (original_var - split1_var)
         split2_weighted_variance = (len(split2) / len(Y)) * (original_var - split2_var)
         return ((len(split1) / len(Y)) * (original_var - split1_var)) + ((len(split2) / len(Y)) * (original_var - split2_var))
