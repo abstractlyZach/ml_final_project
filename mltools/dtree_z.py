@@ -66,7 +66,7 @@ class treeRegress(regressor):
 		finds best feature to split on in X and returns a list of important info
 		'''
 		rows, num_features = mat(X).shape
-		max_variance_reduction = 0
+		max_variance_reduction = -1 * np.inf
 		best_val = 0
 		best_feature = 0
 		best_thresh = 0
@@ -109,7 +109,7 @@ class treeRegress(regressor):
 		avg = total / len(split1)
 		total = 0
 		for index, X_value in split1:
-			total += (X_value - avg) ** 2
+			total += (Y[index] - avg) ** 2
 		split1_var = total / len(split1)
 		# calculate split1's variance
 		total = 0
@@ -118,10 +118,12 @@ class treeRegress(regressor):
 		avg = total / len(split2)
 		total = 0
 		for index, X_value in split2:
-			total += (X_value - avg) ** 2
+			total += (Y[index] - avg) ** 2
 		split2_var = total / len(split2)
-		return original_var - ((len(split1) / len(Y)) * (original_var - split1_var) + \
-					(len(split2) / len(Y)) * (original_var - split2_var))
+		split1_weighted_variance = (len(split1) / len(Y)) * (original_var - split1_var)
+		split2_weighted_variance = (len(split2) / len(Y)) * (original_var - split2_var)
+		return (len(split1) / len(Y)) * (original_var - split1_var)) + \
+					((len(split2) / len(Y)) * (original_var - split2_var)
 
 	def print_tree(self):
 		self.tree.print_tree()

@@ -1,6 +1,7 @@
 from mltools import dtree_z
 import numpy as np
 
+'''
 test = np.genfromtxt('data/zach_test_data.txt', delimiter=',')
 X = test[:, :-1]
 Y = test[:, -1]
@@ -30,6 +31,7 @@ learner = dtree_z.treeRegress()
 learner.train(X, Y, 100)
 learner.print_tree()
 learner.predict(np.asarray([[1,1,1,1],[2,2,2,2],[3,3,3,3]]))
+'''
 
 
 import mltools as ml
