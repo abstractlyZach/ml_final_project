@@ -81,7 +81,7 @@ class treeRegress(regressor):
         for feature in range(num_features): # examine each feature
             feature_data = [None]*rows #***saves appending time 
             for index, x_value in enumerate(X[:, feature]): # attach each value to its index
-            feature_data[index] = (index, x_value, Y[index])
+                feature_data[index] = (index, x_value, Y[index])
             feature_data.sort(key=lambda x: x[1]) # sort values
             for split_index in range(0,len(feature_data) - 1,10): # create splits between data
                 split1 = feature_data[:split_index + 1] #^*** go by ten's to speed things up
