@@ -30,6 +30,7 @@ class treeRegress(regressor):
         self.R = arr([0])           # indices of right children
         self.F = arr([0])           # feature to split on (-1 = leaf = predict)
         self.T = arr([0])           # threshold to split on (prediction value if leaf)
+        print(self.L)
    
         if len(args) or len(kwargs):     # if we were given optional arguments,
             self.train(*args, **kwargs)    #  just pass them through to "train"
@@ -95,6 +96,10 @@ class treeRegress(regressor):
         self.R = R[0:last]                              
         self.F = F[0:last]
         self.T = T[0:last]
+        print(self.L)
+        print(self.R)
+        print(self.F)
+        print(self.T)
 
 
 

@@ -1,6 +1,10 @@
 class TN:
-	def __init__(self, prediction, parent=None, left=None, right=None, id=None):
+	def __init__(self, prediction, rows=None, parent=None, left=None, right=None, id=None):
 		self.parent = parent
+		if parent != None:
+			self.rows = rows
+		else: #root node
+			self.rows = True
 		self._prediction = prediction # just initalize the root node with a bogus prediction. 
 				# it's going to get deleted when you split it, which you must do to create a decision tree
 		self.left  = left
@@ -74,7 +78,8 @@ class TN:
 		print('height is {}'.format(self.height()))
 		print('size is {}'.format(self.size()))
 
-	def split(self, feature_to_split, feature_threshold, left_prediction, right_prediction):
+	def split(self, feature_to_split, feature_threshold, \
+				left_prediction, right_prediction, left_rows, right_rows):
 		if not self.is_leaf():
 			print('Tried to split on tree node that was not a leaf.')
 			print('node id: {}'.format(self.id))
@@ -91,6 +96,9 @@ class TN:
 		else:
 			self.left = TN(left_prediction, parent=self)
 			self.right = TN(right_prediction, parent=self)
+
+		self.left.rows = left_rows
+		self.right.rows = right_rows
 
 
 
