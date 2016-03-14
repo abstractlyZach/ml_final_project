@@ -25,6 +25,8 @@ class treeRegress(regressor):
 		while self.tree.leaves() < maxLeaves: # loop until the number of leaves reaches maxLeaves
 			# pop the queue to obtain the node with the most information gain
 			current_node, best_val, best_feature, best_thresh = self.node_information_gain.remove()
+			if best_val == 0: # no best value to split on
+				break
 			# obtain prediction values for each of the leaves-to-be
 			Yhat_left, Yhat_right = self.__leaf_values(X, Y, best_thresh, best_feature)
 			# figure out which rows of X get sent into the left and right nodes
@@ -33,8 +35,16 @@ class treeRegress(regressor):
 			# split the current node
 			current_node.split(best_feature, best_thresh, Yhat_left, Yhat_right, left_rows, right_rows)
 			# add the new leaves to the priority queue
-			self.node_information_gain.add([current_node.left] + self.__best_feature(X[left_rows], Y[left_rows]))
-			self.node_information_gain.add([current_node.right] + self.__best_feature(X[right_rows], Y[right_rows]))
+			if (Y[left_rows] == Y[left_rows][0]).all == True: # each entry in Y is the same as Y
+				pass # can't split the data any more
+				
+				if (Y[right_rows] == Y[right_rows][0]).all == True: # each entry in Y is the same as Y
+					pass # can't split the data any more
+			elif (Y[right_rows] == Y[right_rows][0]).all == True: # each entry in Y is the same as Y
+				pass # can't split the data any more
+			else:
+				self.node_information_gain.add([current_node.left] + self.__best_feature(X[left_rows], Y[left_rows]))
+				self.node_information_gain.add([current_node.right] + self.__best_feature(X[right_rows], Y[right_rows]))
 
 	def predict(self, X):
 		'''
@@ -53,6 +63,9 @@ class treeRegress(regressor):
 		'''
 		rows, num_features = mat(X).shape
 		max_variance_reduction = 0
+		best_val = 0
+		best_feature = 0
+		best_thresh = 0
 		for feature in range(num_features): # examine each feature
 			feature_data = []
 			for index, x_value in enumerate(X[:, feature]): # attach each value to its index
@@ -64,6 +77,7 @@ class treeRegress(regressor):
 				variance_reduction = self.__variance_reduction(split1, split2, Y) 
 				if variance_reduction > max_variance_reduction: 
 				# if the weighted variance is the least, save the weighted_variance, feature, and index to split on that feature
+					max_variance_reduction = variance_reduction
 					best_val = variance_reduction
 					best_feature = feature
 					best_thresh = (feature_data[split_index][1] + feature_data[split_index + 1][1]) / 2
