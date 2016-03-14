@@ -22,6 +22,7 @@ class treeRegress(regressor):
 		'''
 		self.tree = tree.TN(0) # initialize tree
 		self.node_information_gain.add([self.tree] + self.__best_feature(X, Y)) # add best feature to pq
+
 		while self.tree.leaves() < maxLeaves and not self.node_information_gain.is_empty(): # loop until the number of leaves reaches maxLeaves
 			# pop the queue to obtain the node with the most information gain
 			current_node, best_val, best_feature, best_thresh = self.node_information_gain.remove()
@@ -51,11 +52,12 @@ class treeRegress(regressor):
 	def predict(self, X):
 		'''
 		predicts Yhat for each value in X and returns an array of those prediction values
+		X: M x N numpy array; M data points of N features each
 		'''
-		to_return = np.array()
+		to_return = []
 		for value in X:
 			to_return.append(self.tree.predict(value))
-		return to_return
+		return arr(to_return)
 
 
 
@@ -118,8 +120,8 @@ class treeRegress(regressor):
 		for index, X_value in split2:
 			total += (X_value - avg) ** 2
 		split2_var = total / len(split2)
-		return (len(split1) / len(Y)) * (original_var - split1_var) + \
-					(len(split2) / len(Y)) * (original_var - split2_var) 
+		return original_var - ((len(split1) / len(Y)) * (original_var - split1_var) + \
+					(len(split2) / len(Y)) * (original_var - split2_var))
 
 	def print_tree(self):
 		self.tree.print_tree()

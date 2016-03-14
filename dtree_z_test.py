@@ -29,3 +29,20 @@ Y = data[:, -1:]
 learner = dtree_z.treeRegress()
 learner.train(X, Y, 100)
 learner.print_tree()
+learner.predict(np.asarray([[1,1,1,1],[2,2,2,2],[3,3,3,3]]))
+
+
+import mltools as ml
+import numpy as np
+import matplotlib.pyplot as plt
+import mltools.dtree_z as dt
+
+data = np.genfromtxt('data/curve80.txt')
+X = data[:, :-1]
+Y = data[:,-1:]
+
+learner = dt.treeRegress()
+
+learner.train(X, Y, 2)
+
+lines = plt.plot(X, Y, 'r.')
