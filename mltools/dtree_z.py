@@ -122,8 +122,7 @@ class treeRegress(regressor):
 		split2_var = total / len(split2)
 		split1_weighted_variance = (len(split1) / len(Y)) * (original_var - split1_var)
 		split2_weighted_variance = (len(split2) / len(Y)) * (original_var - split2_var)
-		return (len(split1) / len(Y)) * (original_var - split1_var)) + \
-					((len(split2) / len(Y)) * (original_var - split2_var)
+		return ((len(split1) / len(Y)) * (original_var - split1_var)) + ((len(split2) / len(Y)) * (original_var - split2_var))
 
 	def print_tree(self):
 		self.tree.print_tree()
